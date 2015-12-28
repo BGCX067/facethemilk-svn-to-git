@@ -1,0 +1,100 @@
+<!doctype html public “-//w3c//dtd xhtml 1.0 strict//en” “http://www.w3.org/tr/xhtml1/dtd/xhtml1-strict.dtd”>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://www.facebook.com/2008/fbml">
+    <head>
+
+        <title>FaceTheMilk</title>
+
+        <!--style type="text/css">
+            @import "http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dijit/themes/tundra/tundra.css";
+            @import "http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojo/resources/dojo.css";
+            @import "http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/grid/resources/tundraGrid.css";
+            @import "http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/grid/resources/Grid.css";
+        </style-->
+
+
+        <link rel="stylesheet" type="text/css" href="js/dojo-release-1.2.3/dojo/resources/dojo.css" />
+        <link rel="stylesheet" type="text/css" href="js/dojo-release-1.2.3/dijit/themes/tundra/tundra.css" />
+        <link rel="stylesheet" type="text/css" href="js/dojo-release-1.2.3/dojox/grid/resources/tundraGrid.css" />
+        <link rel="stylesheet" type="text/css" href="js/dojo-release-1.2.3/dojox/grid/resources/Grid.css" />
+        <script type="text/javascript">
+            var djConfig = {
+                //baseUrl: 'http://dl.getdropbox.com/u/146562/',
+                isDebug:true,
+                parseOnLoad:false};
+        </script>
+
+        <!-- load the dojo toolkit base -->
+        <script type="text/javascript" src="js/dojo-release-1.2.3/dojo/dojo.js"></script>
+        <!--script src="http://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+            google.load("dojo", "1.2.3");
+        </script-->
+        <script type="text/javascript">
+
+            //dojo.registerModulePath('rtf', 'js/rtf-0.1');
+            dojo.registerModulePath('rtf', '../../../js/rtf-0.1');
+            dojo.require("rtf.rtfclient");
+            dojo.require("dojo.io.script"); //TODO this needs to go. There should be no calls in this file
+
+            dojo.addOnLoad(function(){
+
+
+                // Here is the general flow (without gears):
+                // User comes to the page -> check fb_id (facebook user id)
+
+                // Query FB datastore if there is a token for the user -> done
+                // --> if yes: Use token to get task list and display -> done
+                // --> if no: show authentication link
+                //     --> when user return from authorization with frob,
+                //         use frob to generate a token, store token in fb
+                //         datastore and use it to get the task list
+                dojo.subscribe('RTMToken', rtf.rtfclient.RTMClient, rtf.rtfclient.RTMClient.getTaskList);
+                dojo.subscribe('FBSession', this, startApp);
+
+
+                if (location.href.split("?")[1] != null) {
+                    rtf.rtfclient.global.params = rtf.rtfclient.Util.parseParams();
+                    rtf.rtfclient.global.sessionKey = rtf.rtfclient.global.params.item('fb_sig_session_key');
+                    rtf.rtfclient.global.userId  = rtf.rtfclient.global.params.item('fb_sig_user');
+
+                }
+
+
+                if (!dojo.isString(rtf.rtfclient.global.sessionKey)){
+                    rtf.rtfclient.FBClient.showFBAuthLink();
+                } else {
+                    startApp();
+                }
+
+
+            });
+
+            function startApp(){
+                if (location.href.split("?")[1] != null) {
+                    var frob = rtf.rtfclient.global.params.item('frob');
+                    if (frob) {
+                        rtf.rtfclient.Util.getAndStoreToken(frob);
+                    } else {
+                        rtf.rtfclient.FBClient.getAssociatedObject('user_to_token','rtf.rtfclient.Util.publishToken');
+                    }
+
+                    //Create RTM auth link. Click the link to get the frob
+                } else {
+                    rtf.rtfclient.RTMClient.showRTMAuthLink();
+
+                }
+            }
+
+
+        </script>
+    </head>
+    <body class="tundra">
+        <h1 id="testHeading">FaceTheMilk</h1>
+        <div id="authURLDiv"></div>
+        <div id="stat"></div>
+        <div id="tasks" style="width: 500px; height: 300px;">
+        </div>
+
+
+    </body>
+</html>
